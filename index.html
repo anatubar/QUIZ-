@@ -4,16 +4,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>💜 Quiz da Ana Beatriz 💜</title>
 
 <style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:'Segoe UI',sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
 
 body{
 background:linear-gradient(135deg,#7b2ff7,#4a00e0);
@@ -31,40 +25,21 @@ max-width:800px;
 padding:30px;
 border-radius:20px;
 box-shadow:0 10px 30px rgba(0,0,0,.25);
+animation:fade .5s ease;
 }
 
-h1{
-text-align:center;
-color:#6a11cb;
-margin-bottom:10px;
+@keyframes fade{
+from{opacity:0;transform:translateY(10px)}
+to{opacity:1;transform:translateY(0)}
 }
 
-.sub{
-text-align:center;
-color:#666;
-margin-bottom:20px;
-}
+h1{text-align:center;color:#6a11cb;margin-bottom:10px}
+.sub{text-align:center;color:#666;margin-bottom:20px}
 
-#progress{
-height:12px;
-background:#ddd;
-border-radius:20px;
-overflow:hidden;
-margin-bottom:25px;
-}
+#progress{height:12px;background:#ddd;border-radius:20px;overflow:hidden;margin-bottom:25px}
+#bar{height:100%;width:0%;background:#6a11cb;transition:.3s}
 
-#bar{
-height:100%;
-width:0%;
-background:#6a11cb;
-transition:.3s;
-}
-
-#question{
-margin-bottom:20px;
-font-size:1.4rem;
-color:#333;
-}
+#question{margin-bottom:20px;font-size:1.4rem;color:#333}
 
 button{
 width:100%;
@@ -75,25 +50,24 @@ border-radius:12px;
 background:#f2f2f2;
 cursor:pointer;
 font-size:1rem;
-transition:.3s;
+transition:.2s;
 }
 
-button:hover{
-background:#6a11cb;
-color:white;
-transform:scale(1.02);
+button:hover{transform:scale(1.02)}
+
+.correct{background:#2ecc71!important;color:white}
+.wrong{background:#e74c3c!important;color:white}
+
+.hidden{display:none}
+
+.score{font-size:3rem;color:#6a11cb;margin:15px 0}
+
+.ranking p{
+padding:6px 0;
+border-bottom:1px solid #eee;
 }
 
-.hidden{
-display:none;
-}
-
-.score{
-font-size:3rem;
-color:#6a11cb;
-margin:15px 0;
-}
-
+.medal{font-weight:bold}
 </style>
 </head>
 
@@ -102,180 +76,177 @@ margin:15px 0;
 <div class="container">
 
 <h1>💜 Quiz da Ana Beatriz 💜</h1>
-
 <p class="sub">Será que você me conhece bem?</p>
 
 <div id="quiz">
-
-<div id="progress">
-<div id="bar"></div>
-</div>
-
+<div id="progress"><div id="bar"></div></div>
 <h2 id="question"></h2>
-
 <div id="answers"></div>
-
 </div>
 
 <div id="result" class="hidden"></div>
-
-<div id="ranking" class="hidden"></div>
+<div id="ranking" class="hidden ranking"></div>
 
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit
+getFirestore,
+collection,
+addDoc,
+getDocs,
+query,
+orderBy,
+limit
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyAoySl6K2YNWrdxI03a6ZKRFJ9Fnsy73M",
-authDomain: "quiz-da-bia.firebaseapp.com",
-projectId: "quiz-da-bia",
-storageBucket: "quiz-da-bia.firebasestorage.app",
-messagingSenderId: "149961986529",
-appId: "1:149961986529:web:dcee62b751115bdc8bc2a0"
+apiKey:"AIzaSyA...",
+authDomain:"quiz-da-bia.firebaseapp.com",
+projectId:"quiz-da-bia",
+storageBucket:"quiz-da-bia.firebasestorage.app",
+messagingSenderId:"149961986529",
+appId:"1:149961986529:web:dcee62b751115bdc8bc2a0"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// QUIZ
+// 🔊 SONS
+const acerto = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const erro = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+
 let atual = 0;
 let pontos = 0;
 let nome = prompt("Qual é seu nome? 💜") || "Anônimo";
+let respostas = [];
 
 const perguntas = [
-{
-pergunta:"Qual é o meu nome?",
-opcoes:["Ana Beatriz","Maria","Julia","Fernanda"],
-correta:"Ana Beatriz"
-},
-{
-pergunta:"Quantos anos eu tenho?",
-opcoes:["15","16","17","18"],
-correta:"16"
-},
-{
-pergunta:"Em qual cidade eu moro?",
-opcoes:["São Paulo","Campinas","Osasco","Santos"],
-correta:"São Paulo"
-}
+{pergunta:"Qual é o meu nome?",opcoes:["Ana Beatriz","Maria","Julia","Fernanda"],correta:"Ana Beatriz"},
+{pergunta:"Quantos anos eu tenho?",opcoes:["15","16","17","18"],correta:"16"},
+{pergunta:"Em qual cidade eu moro?",opcoes:["São Paulo","Campinas","Osasco","Santos"],correta:"São Paulo"},
+{pergunta:"Minha cor favorita?",opcoes:["Roxo","Azul","Rosa","Preto"],correta:"Roxo"}
 ];
 
-function carregarPergunta(){
+function carregar(){
 
-const pergunta = perguntas[atual];
+const p = perguntas[atual];
 
 document.getElementById("question").innerHTML =
-`(${atual + 1}/${perguntas.length}) ${pergunta.pergunta}`;
+`(${atual+1}/${perguntas.length}) ${p.pergunta}`;
 
 document.getElementById("bar").style.width =
 `${(atual/perguntas.length)*100}%`;
 
-const answers = document.getElementById("answers");
-answers.innerHTML = "";
+const div = document.getElementById("answers");
+div.innerHTML = "";
 
-pergunta.opcoes.forEach(opcao => {
+p.opcoes.forEach(op=>{
 
-const botao = document.createElement("button");
-botao.innerText = opcao;
+const b = document.createElement("button");
+b.innerText = op;
 
-botao.onclick = () => responder(opcao);
+b.onclick = ()=>responder(b,op,p);
 
-answers.appendChild(botao);
-
+div.appendChild(b);
 });
-
 }
 
-function responder(opcao){
+function responder(btn,op,p){
 
-if(opcao === perguntas[atual].correta){
+const certo = op === p.correta;
+
+respostas.push({p: p.pergunta, op, c: p.correta});
+
+if(certo){
 pontos++;
+btn.classList.add("correct");
+acerto.play();
+}else{
+btn.classList.add("wrong");
+erro.play();
 }
+
+setTimeout(()=>{
 
 atual++;
+if(atual < perguntas.length) carregar();
+else fim();
 
-if(atual < perguntas.length){
-carregarPergunta();
-}else{
-mostrarResultado();
+},500);
 }
 
-}
-
+// 💾 anti spam simples
 async function salvar(){
-
 await addDoc(collection(db,"ranking"),{
 nome,
 pontos,
 porcentagem: Math.round((pontos/perguntas.length)*100),
-data:new Date()
+tempo: Date.now()
 });
-
 }
 
-async function carregarRanking(){
+async function ranking(){
 
-const q = query(
-collection(db,"ranking"),
-orderBy("pontos","desc"),
-limit(10)
-);
-
+const q = query(collection(db,"ranking"),orderBy("pontos","desc"),limit(10));
 const snap = await getDocs(q);
 
-let html = "<h2>🏆 Ranking Top 10</h2>";
+let html = "<h2>🏆 Ranking</h2>";
 
-let pos = 1;
+let pos=1;
 
-snap.forEach(doc => {
+snap.forEach(d=>{
 
-const d = doc.data();
+const data = d.data();
 
-html += `<p>${pos}. ${d.nome} — ${d.pontos}/${perguntas.length} (${d.porcentagem}%)</p>`;
+let medal = "";
 
+if(pos===1) medal="🥇";
+else if(pos===2) medal="🥈";
+else if(pos===3) medal="🥉";
+
+html += `<p>${medal} ${pos}. ${data.nome} — ${data.pontos} pts (${data.porcentagem}%)</p>`;
 pos++;
-
 });
 
 document.getElementById("ranking").innerHTML = html;
 document.getElementById("ranking").classList.remove("hidden");
-
 }
 
-async function mostrarResultado(){
+async function fim(){
 
 document.getElementById("quiz").classList.add("hidden");
 
-const porcentagem = Math.round((pontos/perguntas.length)*100);
+const pct = Math.round((pontos/perguntas.length)*100);
+
+let msg = pct>80?"🔥 INSANO":
+pct>50?"😎 BOM":
+"😅 precisa melhorar";
+
+let detalhes = respostas.map(r=>{
+const ok = r.op===r.c;
+return `${ok?"✅":"❌"} ${r.op} | certo: ${r.c}`;
+}).join("<br>");
 
 document.getElementById("result").classList.remove("hidden");
 
 document.getElementById("result").innerHTML = `
-<h2>🎉 Resultado</h2>
-
+<h2>🎉 Final</h2>
 <div class="score">${pontos}/${perguntas.length}</div>
-
-<p>${porcentagem}% de acertos</p>
-
-<button onclick="location.reload()">🔄 Jogar novamente</button>
+<p>${pct}% - ${msg}</p>
+<br>
+<p>${detalhes}</p>
+<br>
+<button onclick="location.reload()">🔄 Jogar</button>
 `;
 
 await salvar();
-await carregarRanking();
-
+await ranking();
 }
 
-carregarPergunta();
+carregar();
 
 </script>
 
