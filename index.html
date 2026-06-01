@@ -8,7 +8,6 @@
 <title>💜 Quiz da Ana Beatriz 💜</title>
 
 <style>
-
 *{
 margin:0;
 padding:0;
@@ -85,10 +84,6 @@ color:white;
 transform:scale(1.02);
 }
 
-#result{
-text-align:center;
-}
-
 .hidden{
 display:none;
 }
@@ -108,9 +103,7 @@ margin:15px 0;
 
 <h1>💜 Quiz da Ana Beatriz 💜</h1>
 
-<p class="sub">
-Será que você me conhece bem?
-</p>
+<p class="sub">Será que você me conhece bem?</p>
 
 <div id="quiz">
 
@@ -126,141 +119,56 @@ Será que você me conhece bem?
 
 <div id="result" class="hidden"></div>
 
+<div id="ranking" class="hidden"></div>
+
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyAoySl6K2YNWrdxI03a6ZKRFJ9Fnsy73M",
+authDomain: "quiz-da-bia.firebaseapp.com",
+projectId: "quiz-da-bia",
+storageBucket: "quiz-da-bia.firebasestorage.app",
+messagingSenderId: "149961986529",
+appId: "1:149961986529:web:dcee62b751115bdc8bc2a0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// QUIZ
+let atual = 0;
+let pontos = 0;
+let nome = prompt("Qual é seu nome? 💜") || "Anônimo";
 
 const perguntas = [
-
 {
 pergunta:"Qual é o meu nome?",
 opcoes:["Ana Beatriz","Maria","Julia","Fernanda"],
 correta:"Ana Beatriz"
 },
-
 {
 pergunta:"Quantos anos eu tenho?",
 opcoes:["15","16","17","18"],
 correta:"16"
 },
-
 {
 pergunta:"Em qual cidade eu moro?",
 opcoes:["São Paulo","Campinas","Osasco","Santos"],
 correta:"São Paulo"
-},
-
-{
-pergunta:"Em qual região de São Paulo eu moro?",
-opcoes:["Zona Norte","Zona Sul","Zona Oeste","Zona Leste"],
-correta:"Zona Leste"
-},
-
-{
-pergunta:"Em qual ano do Ensino Médio eu estou?",
-opcoes:["1º Ano","2º Ano","3º Ano","Já concluí"],
-correta:"2º Ano"
-},
-
-{
-pergunta:"Qual especialização em medicina eu quero seguir?",
-opcoes:["Cardiologia","Dermatologia","Neurocirurgia","Pediatria"],
-correta:"Neurocirurgia"
-},
-
-{
-pergunta:"Qual matéria eu gosto bastante?",
-opcoes:["História","Matemática","Português","Biologia"],
-correta:"Matemática"
-},
-
-{
-pergunta:"Qual grupo de K-pop eu gosto?",
-opcoes:["EXO","TXT","Blackpink","BTS"],
-correta:"BTS"
-},
-
-{
-pergunta:"Com quantos anos eu fiz o Enem?",
-opcoes:["13","14","15","16"],
-correta:"15"
-},
-
-{
-pergunta:"Qual é minha data de aniversário?",
-opcoes:[
-"19/01/2010",
-"20/01/2010",
-"19/02/2010",
-"18/01/2010"
-],
-correta:"19/01/2010"
-},
-
-{
-pergunta:"Quantos irmãos eu tenho?",
-opcoes:["2","3","4","5"],
-correta:"4"
-},
-
-{
-pergunta:"Qual é o nome do meu animal de estimação?",
-opcoes:["Thor","Luke","Enzo","Max"],
-correta:"Enzo"
-},
-
-{
-pergunta:"Qual é minha rede social favorita?",
-opcoes:["Instagram","TikTok","Facebook","X"],
-correta:"TikTok"
-},
-
-{
-pergunta:"Qual é o meu signo?",
-opcoes:["Aquário","Capricórnio","Peixes","Áries"],
-correta:"Capricórnio"
-},
-
-{
-pergunta:"Eu sou canhota ou destra?",
-opcoes:["Canhota","Destra"],
-correta:"Canhota"
-},
-
-{
-pergunta:"Eu prefiro frio ou calor?",
-opcoes:["Frio","Calor"],
-correta:"Frio"
-},
-
-{
-pergunta:"Qual é a cor dos meus olhos?",
-opcoes:["Azul","Verde","Mel","Castanho"],
-correta:"Castanho"
-},
-
-{
-pergunta:"Eu prefiro maratonar uma série ou assistir a um filme?",
-opcoes:["Filme","Série"],
-correta:"Série"
-},
-
-{
-pergunta:"Qual é minha cor favorita?",
-opcoes:["Azul","Rosa","Roxo","Preto"],
-correta:"Roxo"
-},
-
-{
-pergunta:"Eu sou uma pessoa...",
-opcoes:["Tímida","Extrovertida"],
-correta:"Tímida"
 }
-
 ];
-
-let atual = 0;
-let pontos = 0;
 
 function carregarPergunta(){
 
@@ -272,20 +180,15 @@ document.getElementById("question").innerHTML =
 document.getElementById("bar").style.width =
 `${(atual/perguntas.length)*100}%`;
 
-const answers =
-document.getElementById("answers");
-
+const answers = document.getElementById("answers");
 answers.innerHTML = "";
 
 pergunta.opcoes.forEach(opcao => {
 
-const botao =
-document.createElement("button");
-
+const botao = document.createElement("button");
 botao.innerText = opcao;
 
-botao.onclick = () =>
-responder(opcao);
+botao.onclick = () => responder(opcao);
 
 answers.appendChild(botao);
 
@@ -303,77 +206,72 @@ atual++;
 
 if(atual < perguntas.length){
 carregarPergunta();
-}
-else{
+}else{
 mostrarResultado();
 }
 
 }
 
-function mostrarResultado(){
+async function salvar(){
 
-document
-.getElementById("quiz")
-.classList.add("hidden");
+await addDoc(collection(db,"ranking"),{
+nome,
+pontos,
+porcentagem: Math.round((pontos/perguntas.length)*100),
+data:new Date()
+});
 
-const porcentagem =
-Math.round(
-(pontos/perguntas.length)*100
+}
+
+async function carregarRanking(){
+
+const q = query(
+collection(db,"ranking"),
+orderBy("pontos","desc"),
+limit(10)
 );
 
-let mensagem = "";
+const snap = await getDocs(q);
 
-if(pontos <= 5){
-mensagem =
-"😅 Você ainda precisa me conhecer melhor!";
-}
-else if(pontos <= 10){
-mensagem =
-"🙂 Você me conhece um pouco!";
-}
-else if(pontos <= 15){
-mensagem =
-"😎 Você me conhece bastante!";
-}
-else if(pontos <= 19){
-mensagem =
-"🤩 Você me conhece muito!";
-}
-else{
-mensagem =
-"🏆 UAU! Você acertou tudo!";
+let html = "<h2>🏆 Ranking Top 10</h2>";
+
+let pos = 1;
+
+snap.forEach(doc => {
+
+const d = doc.data();
+
+html += `<p>${pos}. ${d.nome} — ${d.pontos}/${perguntas.length} (${d.porcentagem}%)</p>`;
+
+pos++;
+
+});
+
+document.getElementById("ranking").innerHTML = html;
+document.getElementById("ranking").classList.remove("hidden");
+
 }
 
-const result =
-document.getElementById("result");
+async function mostrarResultado(){
 
-result.classList.remove("hidden");
+document.getElementById("quiz").classList.add("hidden");
 
-result.innerHTML = `
+const porcentagem = Math.round((pontos/perguntas.length)*100);
 
-<h2>🎉 Quiz Finalizado!</h2>
+document.getElementById("result").classList.remove("hidden");
 
-<div class="score">
-${pontos}/20
-</div>
+document.getElementById("result").innerHTML = `
+<h2>🎉 Resultado</h2>
 
-<p>
-${porcentagem}% de acertos
-</p>
+<div class="score">${pontos}/${perguntas.length}</div>
 
-<br>
+<p>${porcentagem}% de acertos</p>
 
-<p>
-${mensagem}
-</p>
-
-<br>
-
-<button onclick="location.reload()">
-🔄 Jogar Novamente
-</button>
-
+<button onclick="location.reload()">🔄 Jogar novamente</button>
 `;
+
+await salvar();
+await carregarRanking();
 
 }
 
