@@ -1,16 +1,385 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+
 <head>
-<title>Quiz da Ana Beatriz</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>💜 Quiz da Ana Beatriz 💜</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
+}
+
+body{
+background:linear-gradient(135deg,#7b2ff7,#4a00e0);
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:20px;
+}
+
+.container{
+background:white;
+width:100%;
+max-width:800px;
+padding:30px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+
+h1{
+text-align:center;
+color:#6a11cb;
+margin-bottom:10px;
+}
+
+.sub{
+text-align:center;
+color:#666;
+margin-bottom:20px;
+}
+
+#progress{
+height:12px;
+background:#ddd;
+border-radius:20px;
+overflow:hidden;
+margin-bottom:25px;
+}
+
+#bar{
+height:100%;
+width:0%;
+background:#6a11cb;
+transition:.3s;
+}
+
+#question{
+margin-bottom:20px;
+font-size:1.4rem;
+color:#333;
+}
+
+button{
+width:100%;
+padding:15px;
+margin:8px 0;
+border:none;
+border-radius:12px;
+background:#f2f2f2;
+cursor:pointer;
+font-size:1rem;
+transition:.3s;
+}
+
+button:hover{
+background:#6a11cb;
+color:white;
+transform:scale(1.02);
+}
+
+#result{
+text-align:center;
+}
+
+.hidden{
+display:none;
+}
+
+.score{
+font-size:3rem;
+color:#6a11cb;
+margin:15px 0;
+}
+
+</style>
 </head>
+
 <body>
+
+<div class="container">
 
 <h1>💜 Quiz da Ana Beatriz 💜</h1>
 
-<p>Qual grupo de K-pop eu gosto?</p>
+<p class="sub">
+Será que você me conhece bem?
+</p>
 
-<button onclick="alert('Correto!')">BTS</button>
-<button onclick="alert('Errado!')">Blackpink</button>
+<div id="quiz">
+
+<div id="progress">
+<div id="bar"></div>
+</div>
+
+<h2 id="question"></h2>
+
+<div id="answers"></div>
+
+</div>
+
+<div id="result" class="hidden"></div>
+
+</div>
+
+<script>
+
+const perguntas = [
+
+{
+pergunta:"Qual é o meu nome?",
+opcoes:["Ana Beatriz","Maria","Julia","Fernanda"],
+correta:"Ana Beatriz"
+},
+
+{
+pergunta:"Quantos anos eu tenho?",
+opcoes:["15","16","17","18"],
+correta:"16"
+},
+
+{
+pergunta:"Em qual cidade eu moro?",
+opcoes:["São Paulo","Campinas","Osasco","Santos"],
+correta:"São Paulo"
+},
+
+{
+pergunta:"Em qual região de São Paulo eu moro?",
+opcoes:["Zona Norte","Zona Sul","Zona Oeste","Zona Leste"],
+correta:"Zona Leste"
+},
+
+{
+pergunta:"Em qual ano do Ensino Médio eu estou?",
+opcoes:["1º Ano","2º Ano","3º Ano","Já concluí"],
+correta:"2º Ano"
+},
+
+{
+pergunta:"Qual especialização em medicina eu quero seguir?",
+opcoes:["Cardiologia","Dermatologia","Neurocirurgia","Pediatria"],
+correta:"Neurocirurgia"
+},
+
+{
+pergunta:"Qual matéria eu gosto bastante?",
+opcoes:["História","Matemática","Português","Biologia"],
+correta:"Matemática"
+},
+
+{
+pergunta:"Qual grupo de K-pop eu gosto?",
+opcoes:["EXO","TXT","Blackpink","BTS"],
+correta:"BTS"
+},
+
+{
+pergunta:"Com quantos anos eu fiz o Enem?",
+opcoes:["13","14","15","16"],
+correta:"15"
+},
+
+{
+pergunta:"Qual é minha data de aniversário?",
+opcoes:[
+"19/01/2010",
+"20/01/2010",
+"19/02/2010",
+"18/01/2010"
+],
+correta:"19/01/2010"
+},
+
+{
+pergunta:"Quantos irmãos eu tenho?",
+opcoes:["2","3","4","5"],
+correta:"4"
+},
+
+{
+pergunta:"Qual é o nome do meu animal de estimação?",
+opcoes:["Thor","Luke","Enzo","Max"],
+correta:"Enzo"
+},
+
+{
+pergunta:"Qual é minha rede social favorita?",
+opcoes:["Instagram","TikTok","Facebook","X"],
+correta:"TikTok"
+},
+
+{
+pergunta:"Qual é o meu signo?",
+opcoes:["Aquário","Capricórnio","Peixes","Áries"],
+correta:"Capricórnio"
+},
+
+{
+pergunta:"Eu sou canhota ou destra?",
+opcoes:["Canhota","Destra"],
+correta:"Canhota"
+},
+
+{
+pergunta:"Eu prefiro frio ou calor?",
+opcoes:["Frio","Calor"],
+correta:"Frio"
+},
+
+{
+pergunta:"Qual é a cor dos meus olhos?",
+opcoes:["Azul","Verde","Mel","Castanho"],
+correta:"Castanho"
+},
+
+{
+pergunta:"Eu prefiro maratonar uma série ou assistir a um filme?",
+opcoes:["Filme","Série"],
+correta:"Série"
+},
+
+{
+pergunta:"Qual é minha cor favorita?",
+opcoes:["Azul","Rosa","Roxo","Preto"],
+correta:"Roxo"
+},
+
+{
+pergunta:"Eu sou uma pessoa...",
+opcoes:["Tímida","Extrovertida"],
+correta:"Tímida"
+}
+
+];
+
+let atual = 0;
+let pontos = 0;
+
+function carregarPergunta(){
+
+const pergunta = perguntas[atual];
+
+document.getElementById("question").innerHTML =
+`(${atual + 1}/${perguntas.length}) ${pergunta.pergunta}`;
+
+document.getElementById("bar").style.width =
+`${(atual/perguntas.length)*100}%`;
+
+const answers =
+document.getElementById("answers");
+
+answers.innerHTML = "";
+
+pergunta.opcoes.forEach(opcao => {
+
+const botao =
+document.createElement("button");
+
+botao.innerText = opcao;
+
+botao.onclick = () =>
+responder(opcao);
+
+answers.appendChild(botao);
+
+});
+
+}
+
+function responder(opcao){
+
+if(opcao === perguntas[atual].correta){
+pontos++;
+}
+
+atual++;
+
+if(atual < perguntas.length){
+carregarPergunta();
+}
+else{
+mostrarResultado();
+}
+
+}
+
+function mostrarResultado(){
+
+document
+.getElementById("quiz")
+.classList.add("hidden");
+
+const porcentagem =
+Math.round(
+(pontos/perguntas.length)*100
+);
+
+let mensagem = "";
+
+if(pontos <= 5){
+mensagem =
+"😅 Você ainda precisa me conhecer melhor!";
+}
+else if(pontos <= 10){
+mensagem =
+"🙂 Você me conhece um pouco!";
+}
+else if(pontos <= 15){
+mensagem =
+"😎 Você me conhece bastante!";
+}
+else if(pontos <= 19){
+mensagem =
+"🤩 Você me conhece muito!";
+}
+else{
+mensagem =
+"🏆 UAU! Você acertou tudo!";
+}
+
+const result =
+document.getElementById("result");
+
+result.classList.remove("hidden");
+
+result.innerHTML = `
+
+<h2>🎉 Quiz Finalizado!</h2>
+
+<div class="score">
+${pontos}/20
+</div>
+
+<p>
+${porcentagem}% de acertos
+</p>
+
+<br>
+
+<p>
+${mensagem}
+</p>
+
+<br>
+
+<button onclick="location.reload()">
+🔄 Jogar Novamente
+</button>
+
+`;
+
+}
+
+carregarPergunta();
+
+</script>
 
 </body>
 </html>
