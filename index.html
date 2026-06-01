@@ -1,73 +1,70 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💜 Quiz da Ana Beatriz 💜</title>
+<title>Quiz da Ana Beatriz 💜</title>
+
+<link rel="manifest" href="manifest.json">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
-
 body{
+margin:0;
+font-family:Segoe UI;
 background:linear-gradient(135deg,#7b2ff7,#4a00e0);
-min-height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-padding:20px;
+min-height:100vh;
 }
 
 .container{
 background:white;
-width:100%;
+width:95%;
 max-width:800px;
-padding:30px;
+padding:25px;
 border-radius:20px;
-box-shadow:0 10px 30px rgba(0,0,0,.25);
-animation:fade .5s ease;
+box-shadow:0 10px 30px rgba(0,0,0,.3);
 }
 
-@keyframes fade{
-from{opacity:0;transform:translateY(10px)}
-to{opacity:1;transform:translateY(0)}
+h1{text-align:center;color:#6a11cb}
+
+#bar{
+height:10px;
+background:#ddd;
+border-radius:10px;
+overflow:hidden;
+margin:20px 0;
 }
 
-h1{text-align:center;color:#6a11cb;margin-bottom:10px}
-.sub{text-align:center;color:#666;margin-bottom:20px}
-
-#progress{height:12px;background:#ddd;border-radius:20px;overflow:hidden;margin-bottom:25px}
-#bar{height:100%;width:0%;background:#6a11cb;transition:.3s}
-
-#question{margin-bottom:20px;font-size:1.4rem;color:#333}
+#progress{
+height:100%;
+width:0%;
+background:#6a11cb;
+transition:.3s;
+}
 
 button{
 width:100%;
-padding:15px;
-margin:8px 0;
+padding:12px;
+margin:6px 0;
 border:none;
-border-radius:12px;
-background:#f2f2f2;
+border-radius:10px;
 cursor:pointer;
-font-size:1rem;
+background:#eee;
 transition:.2s;
 }
 
-button:hover{transform:scale(1.02)}
+button:hover{transform:scale(1.02);background:#6a11cb;color:white}
 
 .correct{background:#2ecc71!important;color:white}
 .wrong{background:#e74c3c!important;color:white}
 
 .hidden{display:none}
 
-.score{font-size:3rem;color:#6a11cb;margin:15px 0}
+.score{font-size:2.5rem;text-align:center;color:#6a11cb}
 
-.ranking p{
-padding:6px 0;
-border-bottom:1px solid #eee;
-}
-
-.medal{font-weight:bold}
+#ranking p{border-bottom:1px solid #eee;padding:5px}
 </style>
 </head>
 
@@ -76,16 +73,15 @@ border-bottom:1px solid #eee;
 <div class="container">
 
 <h1>💜 Quiz da Ana Beatriz 💜</h1>
-<p class="sub">Será que você me conhece bem?</p>
 
 <div id="quiz">
-<div id="progress"><div id="bar"></div></div>
+<div id="bar"><div id="progress"></div></div>
 <h2 id="question"></h2>
 <div id="answers"></div>
 </div>
 
 <div id="result" class="hidden"></div>
-<div id="ranking" class="hidden ranking"></div>
+<div id="ranking" class="hidden"></div>
 
 </div>
 
@@ -103,47 +99,67 @@ limit
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey:"AIzaSyA...",
-authDomain:"quiz-da-bia.firebaseapp.com",
-projectId:"quiz-da-bia",
-storageBucket:"quiz-da-bia.firebasestorage.app",
-messagingSenderId:"149961986529",
-appId:"1:149961986529:web:dcee62b751115bdc8bc2a0"
+apiKey: "AIzaSyA...",
+authDomain: "quiz-da-bia.firebaseapp.com",
+projectId: "quiz-da-bia",
+storageBucket: "quiz-da-bia.firebasestorage.app",
+messagingSenderId: "149961986529",
+appId: "1:149961986529:web:dcee62b751115bdc8bc2a0"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🔊 SONS
-const acerto = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-const erro = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+// 👤 nome salvo
+let nome = localStorage.getItem("nome");
+if(!nome){
+nome = prompt("Qual é seu nome? 💜") || "Anônimo";
+localStorage.setItem("nome", nome);
+}
 
+// 🎯 estado
 let atual = 0;
 let pontos = 0;
-let nome = prompt("Qual é seu nome? 💜") || "Anônimo";
 let respostas = [];
 
+// 🧠 20 perguntas (SUAS)
 const perguntas = [
-{pergunta:"Qual é o meu nome?",opcoes:["Ana Beatriz","Maria","Julia","Fernanda"],correta:"Ana Beatriz"},
-{pergunta:"Quantos anos eu tenho?",opcoes:["15","16","17","18"],correta:"16"},
-{pergunta:"Em qual cidade eu moro?",opcoes:["São Paulo","Campinas","Osasco","Santos"],correta:"São Paulo"},
-{pergunta:"Minha cor favorita?",opcoes:["Roxo","Azul","Rosa","Preto"],correta:"Roxo"}
+{pergunta:"Qual é o meu nome?",respostas_corretas:["ana beatriz","ana","ana b","anabeatriz"]},
+{pergunta:"Quantos anos eu tenho?",respostas_corretas:["16","dezesseis"]},
+{pergunta:"Em qual cidade eu moro?",respostas_corretas:["sao paulo","sp"]},
+{pergunta:"Em qual região de São Paulo eu moro?",respostas_corretas:["zona leste","zl"]},
+{pergunta:"Em qual ano do Ensino Médio eu estou?",respostas_corretas:["2","2 ano","2º ano","segundo"]},
+{pergunta:"Qual especialização em medicina eu quero seguir no futuro?",respostas_corretas:["neurologia","neurologista"]},
+{pergunta:"Qual matéria eu gosto bastante?",respostas_corretas:["matematica","math"]},
+{pergunta:"Qual grupo de k-pop eu gosto?",respostas_corretas:["bts","bangtan"]},
+{pergunta:"Com quantos anos eu fiz o Enem?",respostas_corretas:["15","quinze"]},
+{pergunta:"Qual é minha data de aniversário completa?",respostas_corretas:["19/01/2010","19-01-2010","19 de janeiro de 2010"]},
+{pergunta:"Quantos irmãos eu tenho?",respostas_corretas:["4","quatro"]},
+{pergunta:"Qual é o nome do meu animal de estimação?",respostas_corretas:["enzo"]},
+{pergunta:"Qual é minha rede social favorita?",respostas_corretas:["tiktok","tik tok"]},
+{pergunta:"Qual é o meu signo?",respostas_corretas:["capricornio"]},
+{pergunta:"Eu sou canhota ou destra?",respostas_corretas:["canhota","mao esquerda"]},
+{pergunta:"Eu prefiro frio ou calor?",respostas_corretas:["frio"]},
+{pergunta:"Qual é a cor dos meus olhos?",respostas_corretas:["castanho","castanhos"]},
+{pergunta:"Eu prefiro maratonar série ou filme?",respostas_corretas:["serie","maratonar"]},
+{pergunta:"Qual é minha cor favorita?",respostas_corretas:["roxo","lilas"]},
+{pergunta:"Eu sou tímida ou extrovertida?",respostas_corretas:["timida","a","b","extrovertida"]}
 ];
 
+// 🔥 carregar
 function carregar(){
-
 const p = perguntas[atual];
 
-document.getElementById("question").innerHTML =
-`(${atual+1}/${perguntas.length}) ${p.pergunta}`;
+document.getElementById("question").innerText =
+`(${atual+1}/20) ${p.pergunta}`;
 
-document.getElementById("bar").style.width =
+document.getElementById("progress").style.width =
 `${(atual/perguntas.length)*100}%`;
 
 const div = document.getElementById("answers");
 div.innerHTML = "";
 
-p.opcoes.forEach(op=>{
+p.respostas_corretas.forEach(op=>{
 
 const b = document.createElement("button");
 b.innerText = op;
@@ -154,31 +170,30 @@ div.appendChild(b);
 });
 }
 
+// 🎯 responder
 function responder(btn,op,p){
 
-const certo = op === p.correta;
+const certo = p.respostas_corretas.some(r =>
+r.toLowerCase() === op.toLowerCase()
+);
 
-respostas.push({p: p.pergunta, op, c: p.correta});
+respostas.push({p:p.pergunta,op,certo:p.respostas_corretas[0]});
 
 if(certo){
 pontos++;
 btn.classList.add("correct");
-acerto.play();
 }else{
 btn.classList.add("wrong");
-erro.play();
 }
 
 setTimeout(()=>{
-
 atual++;
-if(atual < perguntas.length) carregar();
+if(atual<perguntas.length) carregar();
 else fim();
-
 },500);
 }
 
-// 💾 anti spam simples
+// 💾 salvar
 async function salvar(){
 await addDoc(collection(db,"ranking"),{
 nome,
@@ -188,58 +203,45 @@ tempo: Date.now()
 });
 }
 
+// 🏆 ranking
 async function ranking(){
 
 const q = query(collection(db,"ranking"),orderBy("pontos","desc"),limit(10));
 const snap = await getDocs(q);
 
-let html = "<h2>🏆 Ranking</h2>";
+let html="<h2>🏆 Ranking</h2>";
 
 let pos=1;
 
 snap.forEach(d=>{
 
-const data = d.data();
+const data=d.data();
 
-let medal = "";
+let medal = pos===1?"🥇":pos===2?"🥈":pos===3?"🥉":"";
 
-if(pos===1) medal="🥇";
-else if(pos===2) medal="🥈";
-else if(pos===3) medal="🥉";
-
-html += `<p>${medal} ${pos}. ${data.nome} — ${data.pontos} pts (${data.porcentagem}%)</p>`;
+html+=`<p>${medal} ${pos}. ${data.nome} — ${data.pontos}/20 (${data.porcentagem}%)</p>`;
 pos++;
 });
 
-document.getElementById("ranking").innerHTML = html;
+document.getElementById("ranking").innerHTML=html;
 document.getElementById("ranking").classList.remove("hidden");
 }
 
+// 🎉 fim
 async function fim(){
 
 document.getElementById("quiz").classList.add("hidden");
 
-const pct = Math.round((pontos/perguntas.length)*100);
-
-let msg = pct>80?"🔥 INSANO":
-pct>50?"😎 BOM":
-"😅 precisa melhorar";
-
-let detalhes = respostas.map(r=>{
-const ok = r.op===r.c;
-return `${ok?"✅":"❌"} ${r.op} | certo: ${r.c}`;
-}).join("<br>");
+const pct=Math.round((pontos/perguntas.length)*100);
 
 document.getElementById("result").classList.remove("hidden");
 
-document.getElementById("result").innerHTML = `
+document.getElementById("result").innerHTML=`
 <h2>🎉 Final</h2>
-<div class="score">${pontos}/${perguntas.length}</div>
-<p>${pct}% - ${msg}</p>
+<div class="score">${pontos}/20</div>
+<p>${pct}% de acertos</p>
 <br>
-<p>${detalhes}</p>
-<br>
-<button onclick="location.reload()">🔄 Jogar</button>
+<button onclick="location.reload()">🔄 Jogar novamente</button>
 `;
 
 await salvar();
