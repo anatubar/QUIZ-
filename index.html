@@ -94,7 +94,7 @@ const firebaseConfig = {
   authDomain: "quiz-b898c.firebaseapp.com",
   databaseURL: "https://quiz-b898c-default-rtdb.firebaseio.com",
   projectId: "quiz-b898c",
-  storageBucket: "quiz-b898c.firebasestorage.app",
+ storageBucket: "quiz-b898c.appspot.com",
   messagingSenderId: "530944594230",
   appId: "1:530944594230:web:675b1a350df74d3ee5e397",
   measurementId: "G-T8XRSNRCKR"
@@ -199,14 +199,25 @@ else fim();
 
 // salvar ranking
 async function salvar(){
+
+try{
+
 await addDoc(collection(db,"ranking"),{
 nome,
 pontos,
 porcentagem: Math.round((pontos/perguntas.length)*100),
 tempo: Date.now()
 });
+
+console.log("Ranking salvo!");
+
+}catch(e){
+
+console.error("Erro ao salvar:", e);
+
 }
 
+}
 // ranking
 async function ranking(){
 
