@@ -64,7 +64,11 @@ color:white;
 <div id="start">
 <button onclick="iniciar()">▶ Jogar</button>
 </div>
-
+<div style="width:100%;background:#ddd;border-radius:20px;margin-bottom:15px;">
+  <div id="barra"
+       style="height:20px;width:0%;background:#6a11cb;border-radius:20px;">
+  </div>
+</div>
 <div id="quiz" class="hidden">
 <h2 id="question"></h2>
 <div id="answers"></div>
@@ -156,20 +160,30 @@ carregar();
 
 // carregar
 function carregar(){
+
 const q = perguntas[atual];
 
 document.getElementById("question").innerText =
 `(${atual+1}/${perguntas.length}) ${q.p}`;
 
+document.getElementById("barra").style.width =
+((atual+1)/perguntas.length*100)+"%";
+
 const div = document.getElementById("answers");
 div.innerHTML = "";
 
 q.op.forEach(op=>{
+
 const b = document.createElement("button");
+
 b.innerText = op;
+
 b.onclick = ()=>responder(op,b,q);
+
 div.appendChild(b);
+
 });
+
 }
 
 // responder
