@@ -73,10 +73,7 @@ color:white;
 <div id="result" class="hidden"></div>
 <div id="errors" class="hidden"></div>
 <div id="ranking" class="hidden"></div>
-
-<audio id="acerto" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a9b8b1.mp3"></audio>
-<audio id="erro" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2b8c6d1f6c.mp3"></audio>
-
+  
 </div>
 
 <script type="module">
@@ -93,16 +90,26 @@ limit
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "SUA_API_KEY",
-authDomain: "quiz-da-bia.firebaseapp.com",
-projectId: "quiz-da-bia",
-storageBucket: "quiz-da-bia.appspot.com",
-messagingSenderId: "149961986529",
-appId: "SEU_APP_ID"
+  apiKey: "AIzaSyCKXTIiDgp00_KybUtxG539w3PUk7muElk",
+  authDomain: "quiz-b898c.firebaseapp.com",
+  databaseURL: "https://quiz-b898c-default-rtdb.firebaseio.com",
+  projectId: "quiz-b898c",
+  storageBucket: "quiz-b898c.firebasestorage.app",
+  messagingSenderId: "530944594230",
+  appId: "1:530944594230:web:675b1a350df74d3ee5e397",
+  measurementId: "G-T8XRSNRCKR"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+const somAcerto = new Audio(
+"https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
+);
+
+const somErro = new Audio(
+"https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"
+);
 
 // nome
 let nome = localStorage.getItem("nome");
@@ -172,18 +179,15 @@ const certo = op.toLowerCase() === q.correta.toLowerCase();
 
 respostas.push({pergunta:q.p,resposta:op,certo});
 
-const acerto = document.getElementById("acerto");
-const erro = document.getElementById("erro");
-
 if(certo){
-pontos++;
-btn.classList.add("correct");
-acerto.currentTime = 0;
-acerto.play();
+    pontos++;
+    btn.classList.add("correct");
+    somAcerto.currentTime = 0;
+    somAcerto.play();
 }else{
-btn.classList.add("wrong");
-erro.currentTime = 0;
-erro.play();
+    btn.classList.add("wrong");
+    somErro.currentTime = 0;
+    somErro.play();
 }
 
 setTimeout(()=>{
@@ -206,7 +210,12 @@ tempo: Date.now()
 // ranking
 async function ranking(){
 
-const q = query(collection(db,"ranking"),orderBy("pontos","desc"),limit(10));
+const q = query(
+  collection(db,"ranking"),
+  orderBy("pontos","desc"),
+  orderBy("tempo","asc"),
+  limit(10)
+);
 const snap = await getDocs(q);
 
 let html="<h2>🏆 Ranking</h2>";
@@ -225,17 +234,33 @@ document.getElementById("ranking").classList.remove("hidden");
 }
 
 // erros
+// erros
 function mostrarErros(){
-let html="<h2>❌ Erros</h2>";
 
-respostas.forEach(r=>{
-if(!r.certo){
-html+=`<div class="item">❌ ${r.pergunta} → ${r.resposta}</div>`;
-}
+let html = "<h2>❌ Erros</h2>";
+
+respostas.forEach(r => {
+
+    if(!r.certo){
+
+        const correta = perguntas.find(
+            p => p.p === r.pergunta
+        ).correta;
+
+        html += `
+        <div class="item">
+            ❌ ${r.pergunta}<br>
+            Sua resposta: ${r.resposta}<br>
+            ✅ Resposta correta: ${correta}
+        </div>
+        `;
+    }
+
 });
 
-document.getElementById("errors").innerHTML=html;
+document.getElementById("errors").innerHTML = html;
 document.getElementById("errors").classList.remove("hidden");
+
 }
 
 // fim
