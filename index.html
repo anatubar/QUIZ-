@@ -251,7 +251,9 @@ html+="<p style='text-align:center;color:#2ecc71;font-weight:bold'>🎉 Perfeito
 
 const box = document.getElementById("errors");
 box.innerHTML = html;
-box.style.display = "block";   // 🔥 ISSO AQUI É O QUE FALTAVA
+
+// só isso já resolve tudo visualmente
+box.classList.add("show");
 }
 async function carregarRanking(){
 let snap=await getDocs(collection(db,"ranking"));
