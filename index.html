@@ -23,6 +23,12 @@ max-width:800px;
 padding:25px;
 border-radius:20px;
 box-shadow:0 10px 30px rgba(0,0,0,.3);
+animation:fade .3s ease;
+}
+
+@keyframes fade{
+from{opacity:0; transform:scale(.97)}
+to{opacity:1; transform:scale(1)}
 }
 
 h1{text-align:center;color:#6a11cb}
@@ -36,6 +42,7 @@ border-radius:10px;
 cursor:pointer;
 background:#eee;
 transition:.2s;
+font-size:16px;
 }
 
 button:hover{
@@ -44,14 +51,40 @@ background:#6a11cb;
 color:white;
 }
 
+button:disabled{
+opacity:.6;
+cursor:not-allowed;
+}
+
 .correct{background:#2ecc71!important;color:white}
 .wrong{background:#e74c3c!important;color:white}
 
 .hidden{display:none}
 
-.score{font-size:2.5rem;text-align:center;color:#6a11cb}
+.score{
+font-size:2.5rem;
+text-align:center;
+color:#6a11cb;
+}
 
-.item{padding:5px;border-bottom:1px solid #eee}
+.item{
+padding:8px;
+border-bottom:1px solid #eee;
+}
+
+#barra{
+height:20px;
+width:0%;
+background:#6a11cb;
+border-radius:20px;
+transition:.4s;
+}
+
+#start button{
+background:#6a11cb;
+color:white;
+font-weight:bold;
+}
 </style>
 </head>
 
@@ -62,13 +95,13 @@ color:white;
 <h1>💜 Quiz da Ana Beatriz 💜</h1>
 
 <div id="start">
-<button onclick="iniciar()">▶ Jogar</button>
+<button onclick="iniciar()">▶ Jogar agora</button>
 </div>
-<div style="width:100%;background:#ddd;border-radius:20px;margin-bottom:15px;">
-  <div id="barra"
-       style="height:20px;width:0%;background:#6a11cb;border-radius:20px;">
-  </div>
+
+<div style="width:100%;background:#ddd;border-radius:20px;margin:15px 0;">
+  <div id="barra"></div>
 </div>
+
 <div id="quiz" class="hidden">
 <h2 id="question"></h2>
 <div id="answers"></div>
@@ -77,12 +110,12 @@ color:white;
 <div id="result" class="hidden"></div>
 <div id="errors" class="hidden"></div>
 <div id="ranking" class="hidden"></div>
-  
+
 </div>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
 getFirestore,
 collection,
@@ -91,75 +124,69 @@ getDocs,
 query,
 orderBy,
 limit
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+/* 🔥 FIREBASE */
 const firebaseConfig = {
-  apiKey: "AIzaSyCKXTIiDgp00_KybUtxG539w3PUk7muElk",
-  authDomain: "quiz-b898c.firebaseapp.com",
-  databaseURL: "https://quiz-b898c-default-rtdb.firebaseio.com",
-  projectId: "quiz-b898c",
- storageBucket: "quiz-b898c.appspot.com",
-  messagingSenderId: "530944594230",
-  appId: "1:530944594230:web:675b1a350df74d3ee5e397",
-  measurementId: "G-T8XRSNRCKR"
+  apiKey: "SUA-API-KEY",
+  authDomain: "SEU-PROJETO.firebaseapp.com",
+  projectId: "SEU-PROJETO",
+  storageBucket: "SEU-PROJETO.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const somAcerto = new Audio(
-"https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
-);
+/* 🎮 estado */
+let atual = 0;
+let pontos = 0;
+let respostas = [];
+let travado = false;
 
-const somErro = new Audio(
-"https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"
-);
-
-// nome
+/* 👤 nome */
 let nome = localStorage.getItem("nome");
 if(!nome){
 nome = prompt("Qual é seu nome? 💜") || "Anônimo";
 localStorage.setItem("nome", nome);
 }
 
-// estado
-let atual = 0;
-let pontos = 0;
-let respostas = [];
-
-// perguntas completas (COM OPÇÕES REAIS)
+/* ❓ perguntas */
 const perguntas = [
-{p:"Qual é o meu nome?", correta:"ana beatriz", op:["ana beatriz","bia","ana carla","beatriz"]},
+{p:"Qual é o meu nome?", correta:"ana beatriz", op:["ana beatriz","bia","beatriz","ana carla"]},
 {p:"Quantos anos eu tenho?", correta:"16", op:["14","15","16","17"]},
-{p:"Em qual região eu moro?", correta:"zona leste", op:["zona sul","zona leste","centro","lugar nenhum"]},
+{p:"Em qual região eu moro?", correta:"zona leste", op:["zona sul","zona leste","centro","norte"]},
 {p:"Qual grupo de k-pop eu gosto?", correta:"bts", op:["exo","bts","txt","blackpink"]},
 {p:"Com quantos anos fiz o enem?", correta:"15", op:["14","15","16","17"]},
-{p:"qual é Minha cor favorita?", correta:"roxo", op:["azul","verde","roxo","preto"]},
-{p:" qual é o Meu signo?", correta:"capricornio", op:["aries","touro","capricornio","leao"]},
+{p:"Qual minha cor favorita?", correta:"roxo", op:["azul","verde","roxo","preto"]},
+{p:"Qual é meu signo?", correta:"capricornio", op:["aries","touro","capricornio","leao"]},
 {p:"Prefiro frio ou calor?", correta:"frio", op:["frio","calor","verao","tropical"]},
-{p:"Qual rede social é minha favorita?", correta:"tiktok", op:["instagram","tiktok","twitter","facebook"]},
+{p:"Qual rede social favorita?", correta:"tiktok", op:["instagram","tiktok","twitter","facebook"]},
 {p:"Quantos irmãos eu tenho?", correta:"4", op:["2","3","4","5"]},
-{p:"Qual é o nome do meu pet?", correta:"enzo", op:["thor","enzo","max","luna"]},
+{p:"Qual o nome do meu pet?", correta:"enzo", op:["thor","enzo","max","luna"]},
 {p:"Sou canhota ou destra?", correta:"canhota", op:["destra","canhota","ambidestra","nenhuma"]},
-{p:"Os meus olhos são?", correta:"castanhos", op:["azuis","verdes","castanhos","pretos"]},
+{p:"Meus olhos são?", correta:"castanhos", op:["azuis","verdes","castanhos","pretos"]},
 {p:"Prefiro série ou filme?", correta:"serie", op:["filme","serie","documentario","anime"]},
-{p:"Ano que eu fiz o enem?", correta:"2025", op:["2024","2025","2026","2023"]},
+{p:"Ano do enem?", correta:"2025", op:["2024","2025","2026","2023"]},
 {p:"Sou tímida ou extrovertida?", correta:"extrovertida", op:["timida","extrovertida","ambos","nenhum"]},
-{p:"Qual é a minha matéria favorita?", correta:"matematica", op:["portugues","historia","matematica","biologia"]},
-{p:"Em que ano do ensino médio eu estou?", correta:"2", op:["1","2","3","4"]},
-{p:"qual é a Especialização de medicina que eu quero seguir?", correta:"neurologia", op:["cardiologia","neurologia","dermatologia","pediatria"]},
-{p:"Qual é a cidade que eu moro?", correta:"sao paulo", op:["recife","sao paulo","manaus","fortaleza"]}
+{p:"Matéria favorita?", correta:"matematica", op:["portugues","historia","matematica","biologia"]},
+{p:"Ano escolar?", correta:"2", op:["1","2","3","4"]},
+{p:"Especialização desejada?", correta:"neurologia", op:["cardiologia","neurologia","dermatologia","pediatria"]},
+{p:"Cidade?", correta:"sao paulo", op:["recife","sao paulo","manaus","fortaleza"]}
 ];
 
-// iniciar
+/* ▶ iniciar */
 window.iniciar = function(){
 document.getElementById("start").classList.add("hidden");
 document.getElementById("quiz").classList.remove("hidden");
 carregar();
-}
+};
 
-// carregar
+/* 📌 carregar */
 function carregar(){
+
+travado = false;
 
 const q = perguntas[atual];
 
@@ -170,77 +197,71 @@ document.getElementById("barra").style.width =
 ((atual+1)/perguntas.length*100)+"%";
 
 const div = document.getElementById("answers");
+div.style.opacity = 0;
+
+setTimeout(()=>{
+
 div.innerHTML = "";
 
 q.op.forEach(op=>{
-
 const b = document.createElement("button");
-
 b.innerText = op;
 
 b.onclick = ()=>responder(op,b,q);
 
 div.appendChild(b);
-
 });
 
+div.style.opacity = 1;
+
+},150);
 }
 
-// responder
+/* 🎯 resposta */
 function responder(op,btn,q){
+
+if(travado) return;
+travado = true;
+
+document.querySelectorAll("button").forEach(b=>b.disabled=true);
 
 const certo = op.toLowerCase() === q.correta.toLowerCase();
 
 respostas.push({pergunta:q.p,resposta:op,certo});
 
 if(certo){
-    pontos++;
-    btn.classList.add("correct");
-    somAcerto.currentTime = 0;
-    somAcerto.play();
+pontos++;
+btn.classList.add("correct");
 }else{
-    btn.classList.add("wrong");
-    somErro.currentTime = 0;
-    somErro.play();
+btn.classList.add("wrong");
 }
 
 setTimeout(()=>{
 atual++;
 if(atual<perguntas.length) carregar();
 else fim();
-},500);
+},600);
 }
 
-// salvar ranking
+/* 💾 salvar */
 async function salvar(){
-
-try{
-
 await addDoc(collection(db,"ranking"),{
 nome,
 pontos,
 porcentagem: Math.round((pontos/perguntas.length)*100),
 tempo: Date.now()
 });
-
-console.log("Ranking salvo!");
-
-}catch(e){
-
-console.error("Erro ao salvar:", e);
-
 }
 
-}
-// ranking
+/* 🏆 ranking */
 async function ranking(){
 
 const q = query(
-  collection(db,"ranking"),
-  orderBy("pontos","desc"),
-  orderBy("tempo","asc"),
-  limit(10)
+collection(db,"ranking"),
+orderBy("pontos","desc"),
+limit(10)
 );
+
 const snap = await getDocs(q);
 
 let html="<h2>🏆 Ranking</h2>";
@@ -258,37 +279,29 @@ document.getElementById("ranking").innerHTML=html;
 document.getElementById("ranking").classList.remove("hidden");
 }
 
-// erros
-// erros
+/* ❌ erros */
 function mostrarErros(){
 
-let html = "<h2>❌ Erros</h2>";
+let html="<h2>❌ Erros</h2>";
 
-respostas.forEach(r => {
+respostas.forEach(r=>{
+if(!r.certo){
+const correta = perguntas.find(p=>p.p===r.pergunta).correta;
 
-    if(!r.certo){
-
-        const correta = perguntas.find(
-            p => p.p === r.pergunta
-        ).correta;
-
-        html += `
-        <div class="item">
-            ❌ ${r.pergunta}<br>
-            Sua resposta: ${r.resposta}<br>
-            ✅ Resposta correta: ${correta}
-        </div>
-        `;
-    }
-
+html+=`
+<div class="item">
+❌ ${r.pergunta}<br>
+Sua resposta: ${r.resposta}<br>
+✅ Correto: ${correta}
+</div>`;
+}
 });
 
-document.getElementById("errors").innerHTML = html;
+document.getElementById("errors").innerHTML=html;
 document.getElementById("errors").classList.remove("hidden");
-
 }
 
-// fim
+/* 🎉 fim */
 async function fim(){
 
 document.getElementById("quiz").classList.add("hidden");
