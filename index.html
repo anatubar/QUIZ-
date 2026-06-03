@@ -23,12 +23,6 @@ max-width:800px;
 padding:25px;
 border-radius:20px;
 box-shadow:0 10px 30px rgba(0,0,0,.3);
-animation:fade .3s ease;
-}
-
-@keyframes fade{
-from{opacity:0; transform:scale(.97)}
-to{opacity:1; transform:scale(1)}
 }
 
 h1{text-align:center;color:#6a11cb}
@@ -41,19 +35,13 @@ border:none;
 border-radius:10px;
 cursor:pointer;
 background:#eee;
-transition:.2s;
 font-size:16px;
 }
 
 button:hover{
-transform:scale(1.02);
 background:#6a11cb;
 color:white;
-}
-
-button:disabled{
-opacity:.6;
-cursor:not-allowed;
+transform:scale(1.02);
 }
 
 .correct{background:#2ecc71!important;color:white}
@@ -62,7 +50,7 @@ cursor:not-allowed;
 .hidden{display:none}
 
 .score{
-font-size:2.5rem;
+font-size:2rem;
 text-align:center;
 color:#6a11cb;
 }
@@ -80,10 +68,11 @@ border-radius:20px;
 transition:.4s;
 }
 
-#start button{
-background:#6a11cb;
-color:white;
-font-weight:bold;
+#rankingBox{
+margin-top:20px;
+padding:10px;
+border-radius:10px;
+background:#f5f5f5;
 }
 </style>
 </head>
@@ -98,18 +87,23 @@ font-weight:bold;
 <button onclick="iniciar()">▶ Jogar agora</button>
 </div>
 
-<div style="width:100%;background:#ddd;border-radius:20px;margin:15px 0;">
-  <div id="barra"></div>
-</div>
-
 <div id="quiz" class="hidden">
 <h2 id="question"></h2>
 <div id="answers"></div>
 </div>
 
+<div style="width:100%;background:#ddd;border-radius:20px;margin:15px 0;">
+<div id="barra"></div>
+</div>
+
 <div id="result" class="hidden"></div>
-<div id="errors" class="hidden"></div>
-<div id="ranking" class="hidden"></div>
+
+<!-- 🏆 RANKING FIXO -->
+<div id="rankingBox">
+<h2>🏆 Ranking Global</h2>
+<div id="ranking">Carregando ranking...</div>
+<button onclick="carregarRanking()">🔄 Atualizar ranking</button>
+</div>
 
 </div>
 
@@ -143,7 +137,6 @@ const db = getFirestore(app);
 let atual = 0;
 let pontos = 0;
 let respostas = [];
-let travado = false;
 
 /* 👤 nome */
 let nome = localStorage.getItem("nome");
@@ -154,26 +147,16 @@ localStorage.setItem("nome", nome);
 
 /* ❓ perguntas */
 const perguntas = [
-{p:"Qual é o meu nome?", correta:"ana beatriz", op:["ana beatriz","bia","beatriz","ana carla"]},
+{p:"Qual é o meu nome?", correta:"ana beatriz", op:["ana beatriz","bia","beatriz","ana"]},
 {p:"Quantos anos eu tenho?", correta:"16", op:["14","15","16","17"]},
 {p:"Em qual região eu moro?", correta:"zona leste", op:["zona sul","zona leste","centro","norte"]},
 {p:"Qual grupo de k-pop eu gosto?", correta:"bts", op:["exo","bts","txt","blackpink"]},
 {p:"Com quantos anos fiz o enem?", correta:"15", op:["14","15","16","17"]},
 {p:"Qual minha cor favorita?", correta:"roxo", op:["azul","verde","roxo","preto"]},
-{p:"Qual é meu signo?", correta:"capricornio", op:["aries","touro","capricornio","leao"]},
+{p:"Qual meu signo?", correta:"capricornio", op:["aries","touro","capricornio","leao"]},
 {p:"Prefiro frio ou calor?", correta:"frio", op:["frio","calor","verao","tropical"]},
 {p:"Qual rede social favorita?", correta:"tiktok", op:["instagram","tiktok","twitter","facebook"]},
-{p:"Quantos irmãos eu tenho?", correta:"4", op:["2","3","4","5"]},
-{p:"Qual o nome do meu pet?", correta:"enzo", op:["thor","enzo","max","luna"]},
-{p:"Sou canhota ou destra?", correta:"canhota", op:["destra","canhota","ambidestra","nenhuma"]},
-{p:"Meus olhos são?", correta:"castanhos", op:["azuis","verdes","castanhos","pretos"]},
-{p:"Prefiro série ou filme?", correta:"serie", op:["filme","serie","documentario","anime"]},
-{p:"Ano do enem?", correta:"2025", op:["2024","2025","2026","2023"]},
-{p:"Sou tímida ou extrovertida?", correta:"extrovertida", op:["timida","extrovertida","ambos","nenhum"]},
-{p:"Matéria favorita?", correta:"matematica", op:["portugues","historia","matematica","biologia"]},
-{p:"Ano escolar?", correta:"2", op:["1","2","3","4"]},
-{p:"Especialização desejada?", correta:"neurologia", op:["cardiologia","neurologia","dermatologia","pediatria"]},
-{p:"Cidade?", correta:"sao paulo", op:["recife","sao paulo","manaus","fortaleza"]}
+{p:"Quantos irmãos eu tenho?", correta:"4", op:["2","3","4","5"]}
 ];
 
 /* ▶ iniciar */
@@ -185,9 +168,6 @@ carregar();
 
 /* 📌 carregar */
 function carregar(){
-
-travado = false;
-
 const q = perguntas[atual];
 
 document.getElementById("question").innerText =
@@ -197,37 +177,22 @@ document.getElementById("barra").style.width =
 ((atual+1)/perguntas.length*100)+"%";
 
 const div = document.getElementById("answers");
-div.style.opacity = 0;
-
-setTimeout(()=>{
-
 div.innerHTML = "";
 
 q.op.forEach(op=>{
 const b = document.createElement("button");
 b.innerText = op;
-
 b.onclick = ()=>responder(op,b,q);
-
 div.appendChild(b);
 });
-
-div.style.opacity = 1;
-
-},150);
 }
 
 /* 🎯 resposta */
 function responder(op,btn,q){
 
-if(travado) return;
-travado = true;
-
-document.querySelectorAll("button").forEach(b=>b.disabled=true);
-
 const certo = op.toLowerCase() === q.correta.toLowerCase();
 
-respostas.push({pergunta:q.p,resposta:op,certo});
+respostas.push({certo});
 
 if(certo){
 pontos++;
@@ -240,88 +205,73 @@ setTimeout(()=>{
 atual++;
 if(atual<perguntas.length) carregar();
 else fim();
-},600);
+},500);
 }
 
 /* 💾 salvar */
 async function salvar(){
+try{
 await addDoc(collection(db,"ranking"),{
 nome,
 pontos,
-porcentagem: Math.round((pontos/perguntas.length)*100),
 tempo: Date.now()
 });
+}catch(e){
+console.log("erro salvar:",e);
+}
 }
 
-/* 🏆 ranking */
-async function ranking(){
+/* 🏆 CARREGAR RANKING (FORTE E INDEPENDENTE) */
+window.carregarRanking = async function(){
 
-const q = query(
-collection(db,"ranking"),
-orderBy("pontos","desc"),
-limit(10)
-);
+const div = document.getElementById("ranking");
+div.innerHTML = "Carregando...";
 
-const snap = await getDocs(q);
+try{
 
-let html="<h2>🏆 Ranking</h2>";
-let pos=1;
+const snap = await getDocs(collection(db,"ranking"));
 
-snap.forEach(d=>{
-const data=d.data();
-let medal = pos===1?"🥇":pos===2?"🥈":pos===3?"🥉":"";
+let lista = [];
 
-html+=`<div class="item">${medal} ${pos}. ${data.nome} — ${data.pontos}/${perguntas.length}</div>`;
-pos++;
+snap.forEach(doc=>{
+lista.push(doc.data());
 });
 
-document.getElementById("ranking").innerHTML=html;
-document.getElementById("ranking").classList.remove("hidden");
-}
+lista.sort((a,b)=>b.pontos - a.pontos);
 
-/* ❌ erros */
-function mostrarErros(){
+let html = "";
 
-let html="<h2>❌ Erros</h2>";
-
-respostas.forEach(r=>{
-if(!r.certo){
-const correta = perguntas.find(p=>p.p===r.pergunta).correta;
-
-html+=`
-<div class="item">
-❌ ${r.pergunta}<br>
-Sua resposta: ${r.resposta}<br>
-✅ Correto: ${correta}
-</div>`;
-}
+lista.slice(0,10).forEach((d,i)=>{
+let medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+html += `<div class="item">${medal} ${i+1}. ${d.nome} — ${d.pontos}</div>`;
 });
 
-document.getElementById("errors").innerHTML=html;
-document.getElementById("errors").classList.remove("hidden");
+div.innerHTML = html || "Sem dados ainda";
+
+}catch(err){
+div.innerHTML = "Erro ao carregar ranking ❌";
+console.log(err);
 }
+};
 
 /* 🎉 fim */
 async function fim(){
 
 document.getElementById("quiz").classList.add("hidden");
 
-const pct = Math.round((pontos/perguntas.length)*100);
+await salvar();
+await carregarRanking();
 
 document.getElementById("result").classList.remove("hidden");
-
 document.getElementById("result").innerHTML=`
-<h2>🎉 Final</h2>
+<h2>🎉 Fim de jogo</h2>
 <div class="score">${pontos}/${perguntas.length}</div>
-<p>${pct}% de acertos</p>
-<br>
-<button onclick="location.reload()">🔄 Jogar novamente</button>
+<button onclick="location.reload()">Jogar novamente</button>
 `;
 
-mostrarErros();
-await salvar();
-await ranking();
 }
+
+carregarRanking();
 
 </script>
 
