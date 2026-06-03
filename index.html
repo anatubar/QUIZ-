@@ -249,7 +249,9 @@ if(!teve){
 html+="<p style='text-align:center;color:#2ecc71;font-weight:bold'>🎉 Perfeito! Sem erros</p>";
 }
 
-document.getElementById("errors").innerHTML=html;
+const box = document.getElementById("errors");
+box.innerHTML = html;
+box.style.display = "block";   // 🔥 ISSO AQUI É O QUE FALTAVA
 }
 async function carregarRanking(){
 let snap=await getDocs(collection(db,"ranking"));
@@ -291,7 +293,9 @@ document.getElementById("errors").classList.add("show");
 
 setTimeout(()=>{
 carregarRanking();
-document.getElementById("rankingBox").classList.add("show");
+const err = document.getElementById("errors");
+err.style.display = "block";
+err.classList.add("show");
 },1200);
 }
 
