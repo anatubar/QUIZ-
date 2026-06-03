@@ -68,11 +68,30 @@ border-radius:20px;
 transition:.4s;
 }
 
-#rankingBox{
-margin-top:20px;
-padding:10px;
-border-radius:10px;
-background:#f5f5f5;
+#result,#errors,#rankingBox{
+opacity:0;
+transform:translateY(20px);
+transition:all .5s ease;
+}
+
+.show{
+opacity:1!important;
+transform:translateY(0)!important;
+}
+
+.glow{
+animation:glow 1s ease-in-out infinite alternate;
+}
+
+@keyframes glow{
+from{box-shadow:0 0 10px #6a11cb;}
+to{box-shadow:0 0 25px #6a11cb;}
+}
+
+.final-title{
+font-size:2rem;
+text-align:center;
+color:#6a11cb;
 }
 </style>
 </head>
@@ -97,12 +116,11 @@ background:#f5f5f5;
 </div>
 
 <div id="result" class="hidden"></div>
+<div id="errors" class="hidden"></div>
 
-<!-- 🏆 RANKING FIXO -->
 <div id="rankingBox">
-<h2>🏆 Ranking Global</h2>
-<div id="ranking">Carregando ranking...</div>
-<button onclick="carregarRanking()">🔄 Atualizar ranking</button>
+<h2>🏆 Ranking</h2>
+<div id="ranking"></div>
 </div>
 
 </div>
@@ -110,17 +128,9 @@ background:#f5f5f5;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-getFirestore,
-collection,
-addDoc,
-getDocs,
-query,
-orderBy,
-limit
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* 🔥 FIREBASE */
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCKXTIiDgp00_KybUtxG539w3PUk7muElk",
@@ -132,24 +142,19 @@ const firebaseConfig = {
   appId: "1:530944594230:web:675b1a350df74d3ee5e397",
   measurementId: "G-T8XRSNRCKR"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* 🎮 estado */
-let atual = 0;
-let pontos = 0;
-let respostas = [];
+let atual=0;
+let pontos=0;
+let respostas=[];
 
-/* 👤 nome */
 let nome = localStorage.getItem("nome");
 if(!nome){
-nome = prompt("Qual é seu nome? 💜") || "Anônimo";
-localStorage.setItem("nome", nome);
+  nome = prompt("Seu nome? 💜") || "Anônimo";
+  localStorage.setItem("nome", nome);
 }
-
-/* ❓ perguntas */
-const perguntas = [
+const perguntas=[
 {p:"Qual é o meu nome?", correta:"ana beatriz", op:["ana beatriz","bia","beatriz","ana carla"]},
 {p:"Quantos anos eu tenho?", correta:"16", op:["14","15","16","17"]},
 {p:"Em qual região eu moro?", correta:"zona leste", op:["zona sul","zona leste","centro","norte"]},
@@ -160,7 +165,6 @@ const perguntas = [
 {p:"Prefiro frio ou calor?", correta:"frio", op:["frio","calor","verao","tropical"]},
 {p:"Qual rede social favorita?", correta:"tiktok", op:["instagram","tiktok","twitter","facebook"]},
 {p:"Quantos irmãos eu tenho?", correta:"4", op:["2","3","4","5"]},
-
 {p:"Qual o nome do meu pet?", correta:"enzo", op:["thor","enzo","max","luna"]},
 {p:"Sou canhota ou destra?", correta:"canhota", op:["destra","canhota","ambidestra","nenhuma"]},
 {p:"Meus olhos são?", correta:"castanhos", op:["azuis","verdes","castanhos","pretos"]},
@@ -169,42 +173,33 @@ const perguntas = [
 {p:"Sou tímida ou extrovertida?", correta:"extrovertida", op:["timida","extrovertida","ambos","nenhum"]},
 {p:"Matéria favorita?", correta:"matematica", op:["portugues","historia","matematica","biologia"]},
 {p:"Ano escolar?", correta:"2", op:["1","2","3","4"]},
-{p:"Especialização desejada?", correta:"neurologia", op:["cardiologia","neurologia","dermatologia","pediatria"]},
+{p:"Especialização?", correta:"neurologia", op:["cardiologia","neurologia","dermatologia","pediatria"]},
 {p:"Cidade?", correta:"sao paulo", op:["recife","sao paulo","manaus","fortaleza"]}
 ];
-/* ▶ iniciar */
-window.iniciar = function(){
+
+window.iniciar=()=>{
 document.getElementById("start").classList.add("hidden");
 document.getElementById("quiz").classList.remove("hidden");
 carregar();
-};
+}
 
-/* 📌 carregar */
 function carregar(){
-const q = perguntas[atual];
+let q=perguntas[atual];
+document.getElementById("question").innerText=`(${atual+1}/${perguntas.length}) ${q.p}`;
+document.getElementById("barra").style.width=((atual+1)/perguntas.length*100)+"%";
 
-document.getElementById("question").innerText =
-`(${atual+1}/${perguntas.length}) ${q.p}`;
-
-document.getElementById("barra").style.width =
-((atual+1)/perguntas.length*100)+"%";
-
-const div = document.getElementById("answers");
-div.innerHTML = "";
+let div=document.getElementById("answers");
+div.innerHTML="";
 
 q.op.forEach(op=>{
-const b = document.createElement("button");
-b.innerText = op;
-b.onclick = ()=>responder(op,b,q);
+let b=document.createElement("button");
+b.innerText=op;
+b.onclick=()=>responder(op,b,q);
 div.appendChild(b);
 });
 }
-
-/* 🎯 resposta */
 function responder(op,btn,q){
-
-const certo = op.toLowerCase() === q.correta.toLowerCase();
-
+let certo = op.toLowerCase() === q.correta.toLowerCase();
 respostas.push({certo});
 
 if(certo){
@@ -216,72 +211,88 @@ btn.classList.add("wrong");
 
 setTimeout(()=>{
 atual++;
-if(atual<perguntas.length) carregar();
+if(atual<perguntas.length)carregar();
 else fim();
-},500);
+},400);
 }
 
-/* 💾 salvar */
 async function salvar(){
 try{
 await addDoc(collection(db,"ranking"),{
 nome,
 pontos,
-tempo: Date.now()
+tempo:Date.now()
 });
 }catch(e){
-console.log("erro salvar:",e);
+console.log("erro Firebase:", e);
 }
 }
+function mostrarErros(){
+let html="<h2 class='final-title'>❌ Revisão dos erros</h2>";
+let teve=false;
 
-/* 🏆 CARREGAR RANKING (FORTE E INDEPENDENTE) */
-window.carregarRanking = async function(){
+respostas.forEach((r,i)=>{
+if(!r.certo){
+teve=true;
+let q=perguntas[i];
 
-const div = document.getElementById("ranking");
-div.innerHTML = "Carregando...";
-
-try{
-
-const snap = await getDocs(collection(db,"ranking"));
-
-let lista = [];
-
-snap.forEach(doc=>{
-lista.push(doc.data());
+html+=`
+<div class='item'>
+❌ <b>${q.p}</b><br>
+✔ Resposta certa: <b>${q.correta}</b>
+</div>
+`;
+}
 });
 
-lista.sort((a,b)=>b.pontos - a.pontos);
+if(!teve){
+html+="<p style='text-align:center;color:#2ecc71;font-weight:bold'>🎉 Perfeito! Sem erros</p>";
+}
 
-let html = "";
+document.getElementById("errors").innerHTML=html;
+}
+async function carregarRanking(){
+let snap=await getDocs(collection(db,"ranking"));
+let lista=[];
+snap.forEach(d=>lista.push(d.data()));
 
+lista.sort((a,b)=>b.pontos-a.pontos);
+
+let html="";
 lista.slice(0,10).forEach((d,i)=>{
-let medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-html += `<div class="item">${medal} ${i+1}. ${d.nome} — ${d.pontos}</div>`;
+let m=i==0?"🥇":i==1?"🥈":i==2?"🥉":"";
+html+=`<div class='item'>${m} ${d.nome} - ${d.pontos}</div>`;
 });
 
-div.innerHTML = html || "Sem dados ainda";
-
-}catch(err){
-div.innerHTML = "Erro ao carregar ranking ❌";
-console.log(err);
+document.getElementById("ranking").innerHTML=html;
 }
-};
 
-/* 🎉 fim */
 async function fim(){
-
 document.getElementById("quiz").classList.add("hidden");
-
 await salvar();
-await carregarRanking();
 
-document.getElementById("result").classList.remove("hidden");
-document.getElementById("result").innerHTML=`
-<h2>🎉 Fim de jogo</h2>
-<div class="score">${pontos}/${perguntas.length}</div>
-<button onclick="location.reload()">Jogar novamente</button>
+let pct=Math.round((pontos/perguntas.length)*100);
+
+let result=document.getElementById("result");
+result.classList.remove("hidden");
+result.classList.add("show","glow");
+
+result.innerHTML=`
+<div class="final-title">FIM DE JOGO</div>
+<h2>${pontos}/${perguntas.length}</h2>
+<p>${pct}%</p>
+<button onclick="location.reload()">Jogar de novo</button>
 `;
 
+setTimeout(()=>{
+mostrarErros();
+document.getElementById("errors").classList.add("show");
+},600);
+
+setTimeout(()=>{
+carregarRanking();
+document.getElementById("rankingBox").classList.add("show");
+},1200);
 }
 
 carregarRanking();
